@@ -1,0 +1,54 @@
+pipeline {
+  agent any
+
+  environment {
+    VENV = "${WORKSPACE}/venv"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'main', url: 'https://github.com/your-org/flask-app.git'
+      }
+    }
+
+    stage('Install dependencies') {
+      steps {
+        sh '''
+          python3 -m venv $VENV
+          source $VENV/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+        '''
+      }
+    }
+
+    stage('Run tests') {
+      steps {
+        sh '''
+          source $VENV/bin/activate
+          pytest --maxfail=1 --disable-warnings -q
+        '''
+      }
+    }
+
+    stage('Deploy with pm2') {
+      steps {
+        sh '''
+          # Use ecosystem if present; else fallback to direct start
+          if [ -f ecosystem.config.js ]; then
+            pm2 startOrRestart ecosystem.config.js --only flask-app
+          else
+            pm2 restart flask-app || pm2 start $VENV/bin/python --name flask-app -- app.py
+          fi
+          pm2 save
+        '''
+      }
+    }
+  }
+
+  post {
+    success { echo 'Flask app deployed successfully.' }
+    failure { echo 'Flask pipeline failed. Check console output.' }
+  }
+}

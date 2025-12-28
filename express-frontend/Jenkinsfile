@@ -1,0 +1,45 @@
+pipeline {
+  agent any
+
+  tools {
+    nodejs 'NodeJS_20'  // Matches the Tool name configured in Jenkins
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'main', url: 'https://github.com/your-org/express-app.git'
+      }
+    }
+
+    stage('Install dependencies') {
+      steps {
+        sh 'npm ci || npm install'
+      }
+    }
+
+    stage('Run tests') {
+      steps {
+        sh 'npm test --silent'
+      }
+    }
+
+    stage('Deploy with pm2') {
+      steps {
+        sh '''
+          if [ -f ecosystem.config.js ]; then
+            pm2 startOrRestart ecosystem.config.js --only express-app
+          else
+            pm2 restart express-app || pm2 start server.js --name express-app
+          fi
+          pm2 save
+        '''
+      }
+    }
+  }
+
+  post {
+    success { echo 'Express app deployed successfully.' }
+    failure { echo 'Express pipeline failed. Check console output.' }
+  }
+}
