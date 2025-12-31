@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  flask-app:
+    build: ./flask-app
+    container_name: flask-app
+    ports:
+      - "5000:5000"
+    restart: always
+
+  express-app:
+    build: ./express-app
+    container_name: express-app
+    ports:
+      - "3000:3000"
+    restart: always
