@@ -14,7 +14,7 @@ pipeline {
                     // Stop old containers
                     sh 'docker-compose down || true'
                     // Build new images
-                    sh 'docker-compose build'
+                  //  sh 'docker-compose build'
                     // Start containers
                     sh 'docker-compose up -d'
                 }
